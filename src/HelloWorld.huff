@@ -1,0 +1,47 @@
+//SPDX-License-Identifier: Unlicense
+
+
+/* Interface */
+#define function getGreeting() nonpayable returns (bytes)
+
+/* Storage Slots */
+#define constant VALUE_LOCATION = FREE_STORAGE_POINTER()
+
+/* Methods */
+
+/* Strings like "hello world! are treated as dynamic arrays - this means our value will be stored in three seperate words (32 bytes each). 1. Data offset 2. Length 3. Data" */
+
+#define macro GET_GREETING() = takes (0) returns (0) {
+    //we'll create a value and send to memory and then return that value
+    //offset will be zero, length is 13 bytes(26 characters in hex string div by 2)
+    0x20                                                      //[32]
+    push0                                                     //[0,32] --> represents offset
+    mstore                                                    //[]
+
+    0x0d                                                      //[hex_of_13(dynamic array length)]
+    0x20                                                      //[hex_of_32, 13]
+    mstore                                                    //[]
+
+    //store string in memory right padded because it is a reference type
+    __RIGHTPAD(0x48656c6c6f2c20776f726c6421)                  //[left_aligned_hex_of_hello_world!]
+    0x40                                                      //[hex_of_32,data]
+    mstore                                                    //[]
+
+    //get value from memory (full 96 byte data)
+    0x60                                                      //
+    push0
+    return
+    
+}
+
+#define macro MAIN() = takes (0) returns (0) {
+    // Identify which function is being called.
+    push0 calldataload 0xE0 shr
+    dup1 __FUNC_SIG(getGreeting) eq get jumpi
+
+    push0 push0 revert
+
+    get:
+        GET_GREETING()
+
+}
