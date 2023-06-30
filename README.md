@@ -1,35 +1,36 @@
 <img align="right" width="150" height="150" top="100" src="./assets/blueprint.png">
 
-# huff-project-template • [![ci](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml/badge.svg)](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml) ![license](https://img.shields.io/github/license/huff-language/huff-project-template.svg) ![solidity](https://img.shields.io/badge/solidity-^0.8.15-lightgrey)
+# Huff-By-Example • [![ci](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml/badge.svg)](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml) ![license](https://img.shields.io/github/license/huff-language/huff-project-template.svg) ![solidity](https://img.shields.io/badge/solidity-^0.8.15-lightgrey)
 
-Versatile Huff Project Template using Foundry.
-
+Solidity we all know and love, rewritten in Huff.
 
 ## Getting Started
+
+### Huff By Example
+
+Inspired by Smart Contract Programmer's [Solidity By Example](https://solidity-by-example.org/).
 
 ### Requirements
 
 The following will need to be installed in order to use this template. Please follow the links and instructions.
 
--   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)  
-    -   You'll know you've done it right if you can run `git --version`
--   [Foundry / Foundryup](https://github.com/gakonst/foundry)
-    -   This will install `forge`, `cast`, and `anvil`
-    -   You can test you've installed them right by running `forge --version` and get an output like: `forge 0.2.0 (92f8951 2022-08-06T00:09:32.96582Z)`
-    -   To get the latest of each, just run `foundryup`
--   [Huff Compiler](https://docs.huff.sh/get-started/installing/)
-    -   You'll know you've done it right if you can run `huffc --version` and get an output like: `huffc 0.3.0`
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+  - You'll know you've done it right if you can run `git --version`
+- [Foundry / Foundryup](https://github.com/gakonst/foundry)
+  - This will install `forge`, `cast`, and `anvil`
+  - You can test you've installed them right by running `forge --version` and get an output like: `forge 0.2.0 (92f8951 2022-08-06T00:09:32.96582Z)`
+  - To get the latest of each, just run `foundryup`
+- [Huff Compiler](https://docs.huff.sh/get-started/installing/)
+  - You'll know you've done it right if you can run `huffc --version` and get an output like: `huffc 0.3.0`
 
 ### Quickstart
 
-1. Clone this repo or use template
+1. Clone this repo
 
-Click "Use this template" on [GitHub](https://github.com/huff-language/huff-project-template) to create a new repository with this repo as the initial state.
-
-Or run:
+Run:
 
 ```
-git clone https://github.com/huff-language/huff-project-template
+git clone https://github.com/omeguhh/Huff-By-Example.git
 cd huff-project-template
 ```
 
@@ -52,7 +53,6 @@ forge test
 
 For more information on how to use Foundry, check out the [Foundry Github Repository](https://github.com/foundry-rs/foundry/tree/master/forge) and the [foundry-huff library repository](https://github.com/huff-language/foundry-huff).
 
-
 ## Blueprint
 
 ```ml
@@ -67,17 +67,14 @@ test
 └─ SimpleStore.t — SimpleStoreTests
 ```
 
-
 ## License
 
 [The Unlicense](https://github.com/huff-language/huff-project-template/blob/master/LICENSE)
-
 
 ## Acknowledgements
 
 - [forge-template](https://github.com/foundry-rs/forge-template)
 - [femplate](https://github.com/abigger87/femplate)
-
 
 ## Disclaimer
 
