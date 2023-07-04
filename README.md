@@ -2,7 +2,7 @@
 
 # Huff-By-Example • [![ci](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml/badge.svg)](https://github.com/huff-language/huff-project-template/actions/workflows/ci.yaml) ![license](https://img.shields.io/github/license/huff-language/huff-project-template.svg) ![solidity](https://img.shields.io/badge/solidity-^0.8.15-lightgrey)
 
-Solidity we all know and love, rewritten in Huff.
+Solidity By Example that we all know and love, rewritten in Huff.
 
 ## Getting Started
 
