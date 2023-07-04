@@ -1,0 +1,30 @@
+//SPDX-License-Identifier: Unlicense
+
+/* Interface */
+#define function doSomething() view returns(uint256)
+
+/* Constants */
+#define constant FAVORITE_NUMBER = 0x1a4
+
+/* Methods */
+#define macro DO_SOMETHING() = takes(0) returns(0) {
+    //return our constant
+    [FAVORITE_NUMBER]                               //[420]
+    push0                                           //[0,420]
+    mstore                                          //[]
+
+    0x20                                            //[32]
+    push0                                           //[0]
+    return                                          //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr                     //[fn_selector]
+
+    __FUNC_SIG(doSomething) eq do jumpi             //[]
+
+    push0 push0 revert
+
+    do:
+        DO_SOMETHING()
+}
