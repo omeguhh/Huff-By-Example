@@ -1,0 +1,81 @@
+///@title If/Else
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice Tutorial on conditional statements in Huff.
+
+/* Interface */
+#define function addVal(uint256 _num) nonpayable returns(uint256)
+#define function subVal(uint256 _num) nonpayable returns(uint256)
+
+/* Constants */
+#define constant NUM = FREE_STORAGE_POINTER()
+
+/* Methods */
+///@notice In Huff we can use the ````JUMPI``` opcode to make conditional jumps
+///        to a specified program counter. Our macro will decide whether
+///        or not to jump based on what amounts to a result of a bool.
+///        If 0, program continues to next line, if any other number, it
+///        jumps to the line specified by our JUMPDEST.
+#define macro ADD_VALUE() = takes(0) returns(0) {
+    //get curr NUM from storage and check for overflow before returning
+    0x04 calldataload                               //[input]
+    dup1                                            //[i,i]
+    [NUM] sload dup1                                //[num,num,i,i]
+    dup1                                            //[num,num,num,i,i]
+    swap3                                           //[i,num,num,num,i]
+    add                                             //[i+num,num,num,i]
+    lt                                              //[overflow_check,num,i]
+    is_overflow_error jumpi                               //[num,i]
+        //continue here if not overflow
+        add                                         //[num+i]
+        [NUM]                                       //[slot,ans]
+        sstore                                      //[]
+
+        //return new value
+        [NUM] sload                                 //[num]
+        push0 mstore                                //[]
+        0x20 push0 return                           //[]
+    //conditional jump here to revert if overflow
+    is_overflow_error:
+        pop pop                                     //[]
+        push0 push0 revert                          //[]   
+}
+
+#define macro SUB_VALUE() = takes(0) returns (0) {
+    //subtract input from current stored value
+    [NUM] sload dup1 dup1                           //[num,num,num]
+    0x04 calldataload dup1                          //[i,i,num,num,num]
+    swap2                                           //[num,i,i,num,num]
+    sub                                             //[num-i,i,num,num]
+    swap1 swap2                                     //[num,num-i,i,num]
+    lt is_underflow jumpi                           //[underflow_check,i,num]
+        //continue here if not underflow
+        swap1                                       //[num,i]
+        sub                                         //[ans]
+        [NUM]                                       //[slot,ans]
+        sstore                                      //[]
+
+        //return new value
+        [NUM] sload                                 //[num]
+        push0 mstore                                //[]
+        0x20 push0 return                           //[]
+
+    is_underflow:
+        pop pop                                     //[]
+        push0 push0 revert                          //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    //get function signature
+    push0 calldataload 0xe0 shr                     //[fn_selector]
+
+    dup1 __FUNC_SIG(addVal) eq addTwo jumpi
+    __FUNC_SIG(subVal) eq subTwo jumpi
+
+    push0 push0 revert
+
+    addTwo:
+        ADD_VALUE()
+    subTwo:
+        SUB_VALUE()
+}
