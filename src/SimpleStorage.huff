@@ -1,0 +1,55 @@
+///@title Simple Storage
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice A simple demonstration of reading and writing to storage.
+
+/* Interface */
+#define function set(uint256 num) nonpayable returns()
+#define function get() view returns(uint256)
+
+/* Storage */
+#define constant NUM = FREE_STORAGE_POINTER()
+
+/* Methods */
+
+///@notice gets a value from calldata and sets our storage variable
+///        to that value.
+#define macro SET() = takes(0) returns(0) {
+    //function selector is 4bytes so we must offset by that much
+    0x04 calldataload                       //[num]
+    [NUM]                                   //[slot,num]
+    sstore                                  //[]
+
+    0x20                                    //[32]
+    push0                                   //[0,32]
+    return                                  //[]
+}
+
+///@notice get value stored at slot[0] and return
+#define macro GET() = takes(0) returns(0) {
+    //load from storage
+    [NUM]                                   //[slot]
+    sload                                   //[num]
+    //store in memory because return opcode reads from memory
+    push0                                   //[0,num]
+    mstore                                  //[]
+
+    //return
+    0x20                                    //[32]
+    push0                                   //[0,32]
+    return
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr             //[fn_selector]
+
+    dup1 __FUNC_SIG(set) eq set jumpi
+    __FUNC_SIG(get) eq get jumpi
+
+    push0 push0 revert
+
+    set:
+        SET()
+    get:
+        GET()
+}

@@ -1,4 +1,7 @@
-//SPDX-License-Identifier: Unlicense
+///@title Constants
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice A getter for constants.
 
 /* Interface */
 #define function doSomething() view returns(uint256)

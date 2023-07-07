@@ -1,4 +1,7 @@
-//SPDX-License-Identifier: Unlicense
+///@title First Application
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice A counter. Not much, but honest work!
 
 /* Interface */
 #define function get() view returns(uint256)

@@ -1,4 +1,7 @@
-//SPDX-License-Identifier: Unlicense
+///@title Hello World
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice Retrieve a greeting!
 
 
 /* Interface */
