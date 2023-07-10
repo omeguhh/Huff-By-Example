@@ -1,0 +1,66 @@
+///@title Loops
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice Intermediate look into using `JUMP` and `JUMPI` opcodes to iterate through an array.
+
+/*  Interface */
+#define function maxArray(uint256[]) payable returns(uint256)
+
+/*  Methods */
+///@notice To loop over an array you should first know how an array works at the EVM level.
+///        In storage a dynamic array is seperated into 3 parts / words (32 bytes each).
+///        1. Offset
+///        2. Length
+///        3. Data
+
+#define macro MAX_ARRAY() = takes(0) returns(0) {
+    //to query from calldata we must provide the correct offset
+    //for params that arent arrays or strings thats usually `0x04`
+    //refer to the above notice, we must offset more.
+    0x44                                        //[dataLocation]
+    0x24                                        //[lengthLoc,dLoc]
+    dup2 calldataload                           //[arr[0],lLoc,dLoc]
+    push0                                       //[idx[0],arr[0],lLoc,dLoc]
+    dup3 calldataload                           //[length,idx[0],arr[0],lLoc,dLoc]
+    //Begin loop if length != 0
+    start jumpi                                 //[idx[0],arr[0],lLoc,dLoc]
+        push0 push0 revert
+    continue:
+        //compare current index with length of array to determine end of loop
+        0x01 add                                //[idx[i+1],arr[i+1],lLoc,dLoc]
+        dup1 dup4 calldataload                  //[length,idx[i],arr[i],lLoc,dLoc]
+        0x01 swap1 sub                          //[lth-1,idx[i],arr[i],lLoc,dLoc]
+        eq end jumpi                            //[idx[i],arr[i],lLoc,dLoc]
+    start:
+        //iterate through every value in array checking if a>b
+        //to compare a>b get following item in array
+        dup1 0x20 mul dup5 add                  //[dLoc+(i*32)bytes, idx[i], arr[i],lLoc,dLoc]
+        calldataload                            //[arr[i+1],idx[i],arr[i],lLoc,dLoc]
+
+        //check if a>b
+        dup3 gt continue jumpi                  //[idx[i],arr[i],lLoc,dLoc]
+
+        //if not then iterate to next item
+        dup1 0x20 mul dup5 add                  //[dLoc+(i*32)bytes, idx[i], arr[i],lLoc,dLoc]
+        calldataload                            //[arr[i+1],idx[i],arr[i],lLoc,dLoc]
+        swap2 pop                               //[idx[i],arr[i+1],lLoc,dLoc]
+        //using `jump` opcode here instead of jumpi
+        //this is how we loop
+        continue jump
+    //grand finale: return the max number in the array
+    end:                                        //[idx[i+1],arr[i+1],lLoc,dLoc]
+        pop push0 mstore                        //[lLoc,dLoc]
+        pop pop                                 //[]
+        0x20 push0 return                       //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr                 //[fnSelector]
+
+    dup1 __FUNC_SIG(maxArray) eq maxVal jumpi
+
+    push0 push0 revert
+
+    maxVal:
+        MAX_ARRAY()
+}
