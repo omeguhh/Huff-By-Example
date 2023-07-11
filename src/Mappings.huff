@@ -1,0 +1,113 @@
+///@title Mappings
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice Intermediate contract displaying how mappings are built in Huff.
+
+/* Interface */
+// #define function getBalance(address _eoa) view returns(uint256)
+#define function getAllowance(address _from, address _spender) view returns(uint256)
+#define function increaseAllowance(address _spender, uint256 _amount) nonpayable returns(uint256)
+#define function decreaseAllowance(address _spender, uint256 _amount) nonpayable returns(uint256)
+
+/* Constants */
+#define constant ALLOWANCE = FREE_STORAGE_POINTER()
+
+/* Methods */
+///@notice Mappings are relatively straightforward in Huff but can get more complex as you start
+///        extra dimensions to it. For example, it is easier to show the ether balance of a
+///        specified address since it is just a single key to a single value. But What about 
+///        the allowance of one address to another? In Solidity, that would look like 
+///        mapping(address => mapping(address => uint256)) where the first address is the
+///        owner of the eth, the second address is the spender, and the uint256 is the actual
+///        allowance. We will cover both in this section.
+
+// #define macro GET_BALANCE() = takes(1) returns(0) {
+//     //takes address of _from
+//     balance                                     //[ethBalance]
+//     push0 mstore                                //[]
+//     0x20 push0                                  //[0,32]
+//     return                                      //[]
+// }
+
+#define macro GET_ALLOWANCE() = takes(0) returns(0) {
+    0x04 calldataload                           //[address]
+    push0 mstore                                //[]
+    [ALLOWANCE]                                 //[slot]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[hashOfAllowancesForUser]
+    //now we need to get the hash for the allowance of the specified sender.
+    0x24 calldataload                           //[spender,hash]
+    push0 mstore                                //[hash]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[allowance(key)]
+    sload                                       //[allowance]
+    push0 mstore                                //[]
+    0x20 push0 return                           //[]
+}
+
+#define macro INCREASE_ALLOWANCE() = takes(0) returns(0) {
+    caller push0                                //[0,msg.sender]
+    mstore                                      //[]
+    [ALLOWANCE]                                 //[slot]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[hashOfAllowancesForUser]
+    //now we need to get the hash for the allowance of the specified sender.
+    0x04 calldataload                           //[spender,hash]
+    push0 mstore                                //[hash]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[allowance(key)]
+    dup1                                        //[allowance(key),allowance(key)]
+    sload                                       //[allowance,allowance(key)]
+    0x24 calldataload dup1                      //[newAllow,newAllow, allow,allow(key)]
+    //check allowance less than or equal to balance
+    dup1 caller                                 //[msg.sender,nA,nA,nA,a,a(key)]
+    balance                                     //[balance,nA,nA,nA,a,a(key)]
+    lt iszero valid_amount jumpi                //[nA,nå,a,a(key)]
+        push0 push0 revert
+    valid_amount:
+        swap2 gt iszero cont jumpi              //[ans,newAllow,allow(key)]
+            push0 push0 revert
+        cont:
+            dup1 swap2 sstore                   //[newAllow]
+            push0 mstore                        //[]
+            0x20 push0 return                   //[]
+}
+
+#define macro DECREASE_ALLOWANCE() = takes(0) returns(0) {
+    caller push0                                //[0,msg.sender]
+    mstore                                      //[]
+    [ALLOWANCE]                                 //[slot]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[hashOfAllowancesForUser]
+    //now we need to get the hash for the allowance of the specified sender.
+    0x04 calldataload                           //[spender,hash]
+    push0 mstore                                //[hash]
+    0x20 mstore                                 //[]
+    0x40 push0 sha3                             //[allowance(key)]
+    dup1                                        //[allowance(key),allowance(key)]
+    sload                                       //[allowance,allowance(key)]
+    0x24 calldataload dup1                      //[newAllow,newAllow, allow,allow(key)]
+    swap2 lt iszero cont jumpi                  //[ans,newAllow,allow(key)]
+        push0 push0 revert
+    cont:
+        dup1 swap2 sstore                       //[newAllow]
+        push0 mstore                            //[]
+        0x20 push0 return                       //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr                 //[fn_selector]
+    
+    dup1 __FUNC_SIG(getAllowance) eq getAllowance jumpi
+    dup1 __FUNC_SIG(increaseAllowance) eq increaseAllowance jumpi
+    __FUNC_SIG(decreaseAllowance) eq decreaseAllowance jumpi
+
+    push0 push0 revert
+
+    getAllowance:
+        GET_ALLOWANCE()
+    increaseAllowance:
+        INCREASE_ALLOWANCE()
+    decreaseAllowance:
+        DECREASE_ALLOWANCE()
+}
