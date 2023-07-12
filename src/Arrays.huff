@@ -1,0 +1,104 @@
+///@title Arrays
+///@notice SPDX-License-Identifier: Unlicense
+///@author @omeguhh
+///@notice Contract designed to show how arrays work under the hood.
+
+/* Interface */
+#define function push(uint256 _val) nonpayable returns()
+#define function popLast() nonpayable returns()
+#define function length() view returns(uint256)
+#define function write(uint256 _index, uint256 _val) nonpayable returns()
+#define function read(uint256 _index) nonpayable returns(uint256)
+
+/* Constants */
+#define constant ARRAY = FREE_STORAGE_POINTER()
+
+/* Methods */
+///@notice In this section we are building and array from the ground up in order to show how
+///        arrays work at the EVM level. 
+
+#define macro PUSH() = takes(0) returns(0) {
+    0x04 calldataload                               //[val]
+    [ARRAY] sload dup1                              //[length,length,val]
+    //increment length by 1
+    0x01 add                                        //[l++,l,v]
+    [ARRAY] sstore                                  //[l,v]
+    //to calculate the slot multiply length * data length and add to hash of slot
+    0x20 push0 sha3                                 //[key(slot),l, v]
+    add sstore                                      //[]
+    0x20 push0 return
+}
+
+#define macro POP() = takes(0) returns(0) {
+    [ARRAY] sload                                   //[arr_length]
+        //check array length not zero or revert
+    dup1 not_zero jumpi                             //[length]
+        push0 push0 revert
+    not_zero:
+    0x01 swap1 sub                                  //[length--]
+    dup1                                            //[length--,length--]
+    //following line decrements the length of the array
+    push0 sstore                                    //[length--]
+    0x20 push0 sha3                                 //[hash(slot0),len]
+    add                                             //[arr(last_idx)]
+    push0 swap1                                     //[hash,0]
+    sstore                                          //[]
+    0x20 push0 return                               //[]
+}
+
+#define macro LENGTH() = takes(0) returns(0) {
+    [ARRAY] sload                                   //[length]
+    push0 mstore                                    //[]
+    0x20 push0 return                               //[]
+}
+
+#define macro WRITE() = takes(0) returns(0) {
+    0x04 calldataload                               //[index]
+    dup1 [ARRAY] sload gt in_bounds jumpi           //[res, idx]
+        push0 push0 revert
+    in_bounds:
+    0x20 push0 sha3                                 //[hashOfSlot, idx]
+    add                                             //[arr_idx_to_change]
+    0x24 calldataload swap1                         //[hash[arr(i)], new_val]
+    sstore                                          //[]
+    0x20 push0 return                               //[]
+}
+
+#define macro READ() = takes(0) returns(0) {
+    0x04 calldataload                               //[idx]
+        //checking to make sure length greater than index reading to, else revert out of bounds 
+    dup1 [ARRAY] sload gt                           //[idx]
+    iszero out_of_bounds jumpi
+    0x20 push0 sha3                                 //[slotHash, idx]
+    add                                             //[hash_to_read]
+    sload                                           //[val]
+    push0 mstore                                    //[]
+    0x20 push0 return                               //[]
+
+    out_of_bounds:
+        push0 push0 revert
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr                     //[fnSelector]
+
+    dup1 __FUNC_SIG(push) eq push jumpi
+    dup1 __FUNC_SIG(popLast) eq popLast jumpi
+    dup1 __FUNC_SIG(length) eq length jumpi
+    dup1 __FUNC_SIG(write) eq write jumpi
+    __FUNC_SIG(read) eq read jumpi
+
+    push0 push0 revert
+
+    push:
+        PUSH()
+    popLast:
+        POP()
+    length:
+        LENGTH()
+    write:
+        WRITE()
+    read:
+        READ()
+}
+
