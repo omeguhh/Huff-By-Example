@@ -1,0 +1,48 @@
+///@title Enums
+///@notice SPDX-License-Identifier: Unlicense
+///@author Omeguhh
+///@notice Simple contract to display Enums in Huff.
+
+/* Interface */
+#define function getStep() view returns(uint256)
+#define function setStep(uint256) nonpayable returns()
+
+/* Constants */
+#define constant STEP = FREE_STORAGE_POINTER()
+#define constant DNE = 0x00
+#define constant SUBMITTED = 0x01
+#define constant IN_PROGRESS = 0x02
+#define constant ACCEPTED = 0x03
+#define constant REJECTED = 0x04
+
+/* Methods */
+#define macro GET_STEP() = takes(0) returns(0) {
+    [STEP] sload                                //[step]
+    push0 mstore                                //[]
+    0x20 push0 return                           //[]
+}
+
+#define macro SET_STEP() = takes(0) returns(0) {
+    0x04 calldataload                           //[value]
+    0x05 dup2 lt                                //[ans,val]
+    valid_enum jumpi                            //[val]
+        pop                                     //[]
+        push0 push0 revert
+    valid_enum:                                 //[val]
+        [STEP] sstore                           //[]
+        push0 push0 return                      //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    push0 calldataload 0xe0 shr                 //[fnSelector]
+
+    dup1 __FUNC_SIG(getStep) eq getStep jumpi
+    __FUNC_SIG(setStep) eq setStep jumpi
+
+    push0 push0 revert
+
+    getStep:
+        GET_STEP()
+    setStep:
+        SET_STEP()
+}
