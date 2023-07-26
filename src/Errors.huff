@@ -1,0 +1,120 @@
+///@title Errors
+///@notice SPDX-License-Identifier: Unlicense
+///@author Omeguhh
+///@notice Simple contract explaining errors in Huff
+
+/* Interface */
+#define function get() view returns(uint256)
+#define function set(uint256) nonpayable returns()
+#define function inc() nonpayable returns()
+#define function dec() nonpayable returns()
+
+/* Storage Slots */
+#define constant COUNT_LOCATION = FREE_STORAGE_POINTER()
+#define constant ARITHMETIC_OVERFLOW = 0x11
+
+/* Errors */
+///@notice Providing two implementations of errors in Huff, one with an argument and the other sans
+#define error Underflow()
+#define error Overflow(uint256)
+
+/* Macros */
+#define macro GET_VALUE() = takes(0) returns(0) {
+    //all we do is 'get' the value of count from storage and return it
+    [COUNT_LOCATION]                            //[count_slot]
+    sload                                       //[value]
+    push0                                       //[0,value]
+    mstore                                      //[]
+
+    //return value from memory
+    0x20                                        //[32]
+    push0                                       //[0,32]
+    return                                      //[]
+}
+
+#define macro SET_VALUE() = takes(0) returns(0) {
+    0x04 calldataload                           //[value]
+    [COUNT_LOCATION]                            //[count_slot,v]
+    sstore                                      //[]
+
+    push0                                       //[0]
+    push0                                       //[0,0]
+    return                                      //[]
+}
+
+#define macro INC_VALUE() = takes(0) returns(0) {
+    //simple - with a catch. Must check for overflow!
+    [COUNT_LOCATION]                            //[count_slot]
+    dup1                                        //[c_s,c_s]
+    sload                                       //[val, c_s]
+    dup1                                        //[val,val,c_s]
+    dup1                                        //[val,val,val,c_s]
+
+    //now we want to check if current value is greater than 1+current value
+    //this is how we are checking for overflow.
+    0x01                                        //[1,val,val,val,c_s]
+    add                                         //[1+val,val,val,c_s]
+    gt                                          //[ans,val,c_s]
+    not_overflow jumpi
+        pop pop                                 //[]
+        __ERROR(Overflow)                       //[error_sig]
+        push0 mstore                            //[]
+        [ARITHMETIC_OVERFLOW]                   //[panic_code]
+        0x04 mstore                             //[]
+        0x24 push0 revert
+    not_overflow:                               //[val,c_s]
+    0x01 add                                    //[1+val,c_s]
+    swap1                                       //[c_s,1+val]
+    sstore                                      //[]
+    push0 push0 return                          //[]
+}
+
+#define macro DEC_VALUE() = takes(0) returns(0) {
+    //similar to INC, but this time we check for underflow
+    [COUNT_LOCATION]                            //[count_slot]
+    dup1                                        //[c_s,c_s]
+    sload                                       //[val, c_s]
+    dup1                                        //[val,val,c_s]
+    0x01                                        //[1,val,val,c_s]
+    dup2                                        //[val,1,val,val,c_s]
+
+    //now we want to check if current value is less than current value - 1
+    //this is how we are checking for underflow.
+    sub                                         //[val-1,val,val,c_s]
+    lt                                          //[ans,val,c_s]
+    not_underflow jumpi
+        pop pop                                 //[]
+        __ERROR(Underflow)                       //[error_sig]
+        push0 mstore                            //[]
+        0x20 push0 revert
+    not_underflow:                              //[val,c_s]
+    0x01 swap1 sub                              //[val-1,c_s]
+    swap1                                       //[c_s,val-1]
+    sstore                                      //[]
+    push0 push0 return                          //[]
+}
+
+#define macro MAIN() = takes(0) returns(0) {
+    //get function selector
+    push0 calldataload 0xe0 shr
+
+    dup1 __FUNC_SIG(get) eq getter jumpi
+    dup1 __FUNC_SIG(set) eq setter jumpi
+    dup1 __FUNC_SIG(inc) eq increment jumpi
+    dup1 __FUNC_SIG(dec) eq decrement jumpi
+
+    //revert if any other fn is called
+    push0 push0 revert 
+
+    getter:
+        GET_VALUE()
+
+    setter:
+        SET_VALUE()
+    
+    increment:
+        INC_VALUE()
+    
+    decrement:
+        DEC_VALUE()
+}
